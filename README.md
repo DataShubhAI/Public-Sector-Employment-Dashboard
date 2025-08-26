@@ -30,5 +30,6 @@ The project uses a **hardcoded dataset** (`jobData` array) containing:
 ## 👨‍💻 Author  
 Developed by **Shubham Yadav**  
 - 🎓 IIT Patna | Computer Science & Data Analysis  
-- 🔗 [LinkedIn](https://www.linkedin.com/in/shubham) | [GitHub](https://github.com/)  
+- 🔗 [LinkedIn](https://www.linkedin.com/in/shubham-yadav-98a0a4286/) | [GitHub](https://github.com/)  
 """
+
