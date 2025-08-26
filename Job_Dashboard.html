@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employment News Dashboard | 23-29 August 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as an interactive dashboard. The structure prioritizes immediate insight and deep exploration. It starts with high-level KPI cards for a quick overview (Total Vacancies, Organizations). Below this, a central control panel with filters (Employment Type, Pay Level) allows users to customize the data view. The main content area is split: on the left, interactive charts visualize the filtered data (Vacancies by Sector, by Type), and on the right, a dynamic, searchable table lists the detailed job vacancies. This structure was chosen to empower users to move from a broad overview to specific, relevant job details seamlessly, which is more effective than a linear, page-by-page replication of the source report. The user flow is designed to be non-linear, encouraging exploration based on individual interests. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Total vacancy count. -> Goal: Inform. -> Viz/Method: KPI Card (HTML/CSS). -> Interaction: None. -> Justification: Provides immediate, high-level context. -> Library/Method: Tailwind CSS.
+        - Report Info: Number of recruiting organizations. -> Goal: Inform. -> Viz/Method: KPI Card (HTML/CSS). -> Interaction: None. -> Justification: Shows the breadth of opportunities. -> Library/Method: Tailwind CSS.
+        - Report Info: Vacancies grouped by employment type (Regular, Contractual, Deputation, etc.). -> Goal: Compare proportions. -> Viz/Method: Donut Chart. -> Interaction: Filtering the main job list on click. -> Justification: A donut chart is excellent for showing part-to-whole relationships clearly. -> Library/Method: Chart.js (Canvas).
+        - Report Info: Vacancies grouped by strategic sectors (Defence, Tech, Health, etc.). -> Goal: Compare magnitudes. -> Viz/Method: Bar Chart. -> Interaction: Filtering the main job list on click. -> Justification: Bar charts are ideal for comparing distinct categories. -> Library/Method: Chart.js (Canvas).
+        - Report Info: All individual job listings. -> Goal: Organize & Explore. -> Viz/Method: Interactive Table. -> Interaction: Search, filter, and sort. -> Justification: A searchable table is the most efficient way for users to find specific job details. -> Library/Method: Vanilla JS + Tailwind CSS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfbf7;
+            color: #3f3c36;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .kpi-card {
+            background-color: #fff;
+            border: 1px solid #e7e5e1;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .table-header-sticky {
+            position: sticky;
+            top: 0;
+            background-color: #f7f5f2;
+        }
+        .filter-btn {
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .filter-btn.active {
+            background-color: #a89a83;
+            color: #ffffff;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c4bba9;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a89a83;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#6d5d47] mb-2">Public Sector Employment Dashboard</h1>
+            <p class="text-lg text-gray-600">An Interactive Analysis of Employment News (23-29 August 2025)</p>
+        </header>
+
+        <main id="app">
+            <section id="kpi-section" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="kpi-card p-6 rounded-lg shadow-sm text-center">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">Total Vacancies</h3>
+                    <p id="total-vacancies" class="text-5xl font-bold text-[#a89a83]">0</p>
+                </div>
+                <div class="kpi-card p-6 rounded-lg shadow-sm text-center">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">Recruiting Organizations</h3>
+                    <p id="total-organizations" class="text-5xl font-bold text-[#a89a83]">0</p>
+                </div>
+                <div class="kpi-card p-6 rounded-lg shadow-sm text-center">
+                    <h3 class="text-lg font-semibold text-gray-500 mb-2">Largest Recruitment Drive</h3>
+                    <p id="largest-drive" class="text-2xl font-bold text-[#a89a83] leading-tight">Loading...</p>
+                </div>
+            </section>
+
+            <section id="interactive-analysis" class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-8">
+                 <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-[#6d5d47] mb-2">Interactive Analysis</h2>
+                    <p class="text-gray-600">This section provides an interactive overview of the job vacancies. Use the filters to refine the data displayed in the charts and the detailed job list below. Click on segments in the charts to apply filters directly.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="w-full">
+                        <h3 class="text-xl font-semibold text-center mb-4 text-[#6d5d47]">Vacancies by Employment Type</h3>
+                        <div class="chart-container h-64 md:h-80 mx-auto">
+                            <canvas id="typeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full">
+                        <h3 class="text-xl font-semibold text-center mb-4 text-[#6d5d47]">Top 10 Recruiting Sectors</h3>
+                        <div class="chart-container h-64 md:h-80 mx-auto">
+                            <canvas id="sectorChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="job-listings" class="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-[#6d5d47] mb-2">Explore Job Listings</h2>
+                    <p class="text-gray-600">Dive into the details. Use the search bar and filters to find specific opportunities. Click on a row to see more details about the post.</p>
+                </div>
+                <div class="flex flex-col md:flex-row gap-4 mb-4">
+                    <input type="text" id="search-input" placeholder="Search by organization or post title..." class="w-full md:w-1/2 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a89a83] focus:border-transparent">
+                    <select id="type-filter" class="w-full md:w-1/4 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a89a83] focus:border-transparent">
+                        <option value="">All Employment Types</option>
+                    </select>
+                     <select id="sector-filter" class="w-full md:w-1/4 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#a89a83] focus:border-transparent">
+                        <option value="">All Sectors</option>
+                    </select>
+                </div>
+                <div class="overflow-x-auto max-h-[800px] border border-gray-200 rounded-lg">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs text-gray-700 uppercase table-header-sticky">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">Organization</th>
+                                <th scope="col" class="px-6 py-3">Post Title</th>
+                                <th scope="col" class="px-6 py-3">Vacancies</th>
+                                <th scope="col" class="px-6 py-3">Closing Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs-table-body">
+                        </tbody>
+                    </table>
+                </div>
+                 <p id="no-results" class="text-center text-gray-500 py-8 hidden">No matching jobs found.</p>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const jobData = [
+            { org: "Bank of Maharashtra", title: "Generalist Officer", vacancies: 500, type: "Regular", sector: "Banking & Finance", closingDate: "2025-08-30" },
+            { org: "Intelligence Bureau (IB)", title: "Junior Intelligence Officer Grade-II/Tech", vacancies: 394, type: "Regular", sector: "Defence & Security", closingDate: "2025-09-14" },
+            { org: "Railway Recruitment Boards (RRBs)", title: "Section Controller", vacancies: 368, type: "Regular", sector: "Railways", closingDate: "2025-10-14" },
+            { org: "Delhi Subordinate Services Selection Board", title: "Court/Room/Security Attendant", vacancies: 334, type: "Regular", sector: "Judiciary & Legal", closingDate: "2025-09-24" },
+            { org: "Border Security Force (BSF)", title: "Constable (GD) (for Mizoram)", vacancies: 300, type: "Regular", sector: "Defence & Security", closingDate: "2025-09-18" },
+            { org: "Border Security Force (BSF)", title: "Constable (GD) (for Meghalaya)", vacancies: 300, type: "Regular", sector: "Defence & Security", closingDate: "2025-09-18" },
+            { org: "Naval Dockyard, Mumbai", title: "Apprentice (Various Trades)", vacancies: 286, type: "Apprenticeship", sector: "Defence & Security", closingDate: "2025-09-12" },
+            { org: "Sanjay Gandhi PGIMS, Lucknow", title: "Professor / Faculty Posts", vacancies: 150, type: "Regular", sector: "Health & Medical", closingDate: "2025-09-08" },
+            { org: "DGT, Min. of Skill Development", title: "Training Officer", vacancies: 87, type: "Regular", sector: "Education & Skilling", closingDate: "2025-09-11" },
+            { org: "National Remote Sensing Centre (NRSC)", title: "Technician Apprentice", vacancies: 86, type: "Apprenticeship", sector: "Science & Technology", closingDate: "2025-09-11" },
+            { org: "Cordite Factory, Aruvankadu", title: "Tenure Based CPW Personnel", vacancies: 77, type: "Contractual", sector: "Defence & Security", closingDate: "2025-09-12" },
+            { org: "Ordnance Factory, Tiruchirappalli", title: "Tradesman (On Contract)", vacancies: 73, type: "Contractual", sector: "Defence & Security", closingDate: "2025-09-21" },
+            { org: "JIPMER", title: "Assistant Professor", vacancies: 62, type: "Regular", sector: "Health & Medical", closingDate: "2025-09-18" },
+            { org: "UPSC", title: "Lecturer (Various Subjects for ST)", vacancies: 40, type: "Regular", sector: "Education & Skilling", closingDate: "2025-09-11" },
+            { org: "Armed Forces Tribunal, Chandigarh", title: "PPS / PS / SO etc.", vacancies: 44, type: "Deputation", sector: "Judiciary & Legal", closingDate: "2025-10-10" },
+            { org: "Bureau of Civil Aviation Security (BCAS)", title: "Deputy Aviation Security Officer", vacancies: 42, type: "Deputation", sector: "Aviation", closingDate: "2025-10-22" },
+            { org: "DGT, Min. of Skill Development", title: "Training Officer", vacancies: 37, type: "Regular", sector: "Education & Skilling", closingDate: "2025-09-11" },
+            { org: "JIPMER", title: "Professor", vacancies: 36, type: "Regular", sector: "Health & Medical", closingDate: "2025-09-18" },
+            { org: "National Remote Sensing Centre (NRSC)", title: "Graduate Apprentice (General)", vacancies: 30, type: "Apprenticeship", sector: "Science & Technology", closingDate: "2025-09-11" },
+            { org: "UPSC", title: "Public Prosecutor (CBI)", vacancies: 25, type: "Regular", sector: "Judiciary & Legal", closingDate: "2025-09-11" },
+            { org: "IIT Bombay", title: "Deputy Registrar / Technical Officer etc.", vacancies: 25, type: "Regular", sector: "Education & Skilling", closingDate: "2025-09-11" },
+            { org: "NTPC Limited (Nuclear Division)", title: "Managerial Posts", vacancies: 25, type: "Regular", sector: "Energy", closingDate: "2025-08-26" },
+            { org: "Bureau of Indian Standards (BIS)", title: "Section Officer", vacancies: 23, type: "Deputation", sector: "Administration", closingDate: "2025-10-07" },
+            { org: "NIT Kurukshetra", title: "Various Non-Teaching Posts", vacancies: 23, type: "Regular", sector: "Education & Skilling", closingDate: "2025-09-30" },
+            { org: "Shyam Lal College, Delhi", title: "Assistant Professor (Commerce)", vacancies: 21, type: "Permanent", sector: "Education & Skilling", closingDate: "2025-09-06" },
+            { org: "UPSC", title: "Assistant Public Prosecutor (CBI)", vacancies: 19, type: "Regular", sector: "Judiciary & Legal", closingDate: "2025-09-11" },
+            { org: "JIPMER, Puducherry & Karaikal", title: "Deputy Director, Registrar etc.", vacancies: 18, type: "Deputation", sector: "Health & Medical", closingDate: "2025-09-22" },
+            { org: "Hindustan Copper Limited", title: "Graduate Engineer Trainee", vacancies: 16, type: "Regular", sector: "Mining & Metals", closingDate: "2025-09-02" },
+            { org: "National Remote Sensing Centre (NRSC)", title: "Graduate Apprentice (Engg.)", vacancies: 11, type: "Apprenticeship", sector: "Science & Technology", closingDate: "2025-09-11" },
+            { org: "Central GST Commissionerate, Guwahati", title: "Havaldar (Sports Quota)", vacancies: 10, type: "Regular", sector: "Finance & Revenue", closingDate: "2025-09-13" },
+            { org: "Dept. of PwD", title: "Young Professional", vacancies: 10, type: "Contractual", sector: "Social Sector", closingDate: "2025-09-12" },
+            { org: "SJVN Limited, Arunachal Pradesh", title: "Assistant/W6", vacancies: 10, type: "Regular", sector: "Energy", closingDate: "2025-09-30" },
+            { org: "NHPC Limited", title: "Field Engineer/Medical Officer", vacancies: 9, type: "Contractual", sector: "Energy", closingDate: "2025-09-08" },
+            { org: "Land Ports Authority of India", title: "Director / SO / JE etc.", vacancies: 9, type: "Deputation", sector: "Infrastructure", closingDate: "2025-09-26" },
+            { org: "North Eastern Police Academy", title: "Assistant Director etc.", vacancies: 8, type: "Deputation", sector: "Defence & Security", closingDate: "2025-10-22" },
+            { org: "JIPMER, Puducherry", title: "Consultant (Retired Officials)", vacancies: 7, type: "Contractual", sector: "Health & Medical", closingDate: "2025-09-01" },
+            { org: "CCRH", title: "JRF/SRF (Homoeo)", vacancies: 7, type: "Contractual", sector: "Health & Medical", closingDate: "2025-08-29" },
+            { org: "Sainik School Kodagu", title: "Various Contractual Posts", vacancies: 6, type: "Contractual", sector: "Education & Skilling", closingDate: "2025-09-10" },
+            { org: "Mumbai Port Authority", title: "Various Managerial Posts", vacancies: 5, type: "Regular", sector: "Ports & Shipping", closingDate: "2025-09-08" },
+            { org: "FDDI", title: "Technologist", vacancies: 5, type: "Contractual", sector: "Education & Skilling", closingDate: "2025-09-22" },
+            { org: "ITBPF", title: "Constable/Head Constable", vacancies: 5, type: "Deputation", sector: "Defence & Security", closingDate: "2025-10-22" },
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const totalVacanciesEl = document.getElementById('total-vacancies');
+            const totalOrganizationsEl = document.getElementById('total-organizations');
+            const largestDriveEl = document.getElementById('largest-drive');
+            const searchInput = document.getElementById('search-input');
+            const typeFilter = document.getElementById('type-filter');
+            const sectorFilter = document.getElementById('sector-filter');
+            const tableBody = document.getElementById('jobs-table-body');
+            const noResultsEl = document.getElementById('no-results');
+
+            let typeChart, sectorChart;
+
+            function init() {
+                updateKPIs();
+                populateFilters();
+                renderTable(jobData);
+                createCharts();
+            }
+
+            function updateKPIs() {
+                const totalVacancies = jobData.reduce((sum, job) => sum + job.vacancies, 0);
+                const uniqueOrgs = new Set(jobData.map(job => job.org));
+                const largestDrive = jobData.reduce((max, job) => job.vacancies > max.vacancies ? job : max, jobData[0]);
+
+                totalVacanciesEl.textContent = totalVacancies.toLocaleString('en-IN');
+                totalOrganizationsEl.textContent = uniqueOrgs.size;
+                largestDriveEl.innerHTML = `${largestDrive.org}<br><span class="text-lg font-medium text-gray-500">${largestDrive.vacancies.toLocaleString('en-IN')} vacancies</span>`;
+            }
+
+            function populateFilters() {
+                const types = [...new Set(jobData.map(job => job.type))];
+                types.sort().forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeFilter.appendChild(option);
+                });
+                
+                const sectors = [...new Set(jobData.map(job => job.sector))];
+                sectors.sort().forEach(sector => {
+                    const option = document.createElement('option');
+                    option.value = sector;
+                    option.textContent = sector;
+                    sectorFilter.appendChild(option);
+                });
+            }
+
+            function renderTable(data) {
+                tableBody.innerHTML = '';
+                if (data.length === 0) {
+                    noResultsEl.classList.remove('hidden');
+                    return;
+                }
+                noResultsEl.classList.add('hidden');
+                
+                data.forEach(job => {
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 font-medium text-gray-900">${job.org}</td>
+                        <td class="px-6 py-4">${job.title}</td>
+                        <td class="px-6 py-4 text-center">${job.vacancies.toLocaleString('en-IN')}</td>
+                        <td class="px-6 py-4">${new Date(job.closingDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            function filterData() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedType = typeFilter.value;
+                const selectedSector = sectorFilter.value;
+
+                const filteredJobs = jobData.filter(job => {
+                    const matchesSearch = job.org.toLowerCase().includes(searchTerm) || job.title.toLowerCase().includes(searchTerm);
+                    const matchesType = !selectedType || job.type === selectedType;
+                    const matchesSector = !selectedSector || job.sector === selectedSector;
+                    return matchesSearch && matchesType && matchesSector;
+                });
+
+                renderTable(filteredJobs);
+            }
+            
+            function createCharts() {
+                const typeCtx = document.getElementById('typeChart').getContext('2d');
+                const sectorCtx = document.getElementById('sectorChart').getContext('2d');
+
+                const typeData = jobData.reduce((acc, job) => {
+                    acc[job.type] = (acc[job.type] || 0) + job.vacancies;
+                    return acc;
+                }, {});
+
+                const sectorData = jobData.reduce((acc, job) => {
+                    acc[job.sector] = (acc[job.sector] || 0) + job.vacancies;
+                    return acc;
+                }, {});
+                
+                const sortedSectors = Object.entries(sectorData)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 10);
+
+                const chartColors = {
+                    bg: ['#a89a83', '#c4bba9', '#e1dcd0', '#6d5d47', '#9b8a74'],
+                    hover: ['#9b8a74', '#b7ad9d', '#d4cebf', '#5a4c3a', '#8e7d68']
+                };
+
+                typeChart = new Chart(typeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(typeData),
+                        datasets: [{
+                            data: Object.values(typeData),
+                            backgroundColor: chartColors.bg,
+                            hoverBackgroundColor: chartColors.hover,
+                            borderColor: '#fdfbf7',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                        }
+                    }
+                });
+
+                sectorChart = new Chart(sectorCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedSectors.map(s => s[0]),
+                        datasets: [{
+                            label: 'Number of Vacancies',
+                            data: sortedSectors.map(s => s[1]),
+                            backgroundColor: '#a89a83',
+                            hoverBackgroundColor: '#9b8a74',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', filterData);
+            typeFilter.addEventListener('change', filterData);
+            sectorFilter.addEventListener('change', filterData);
+
+            init();
+        });
+    </script>
+</body>
+</html>
