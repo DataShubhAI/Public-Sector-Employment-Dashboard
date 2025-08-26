@@ -1,4 +1,6 @@
 # Public-Sector-Employment-Dashboard
+<img width="1440" height="900" alt="Screenshot 2025-08-26 at 3 39 15 PM" src="https://github.com/user-attachments/assets/7c817ac9-db65-44b3-9ec5-78e6f0afa7f0" />
+
 <img width="1440" height="900" alt="Screenshot 2025-08-26 at 3 39 42 PM" src="https://github.com/user-attachments/assets/f040e298-cb6c-4657-a8a0-34e63d732385" />
 
 
