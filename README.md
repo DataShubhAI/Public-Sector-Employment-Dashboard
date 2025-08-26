@@ -29,9 +29,3 @@ Developed by **Shubham Yadav**
 - 🎓 IIT Patna | Computer Science & Data Analysis  
 - 🔗 [LinkedIn](https://www.linkedin.com/in/shubham) | [GitHub](https://github.com/)  
 """
-
-# Convert markdown content into a README.md file
-output_path = "/mnt/data/README.md"
-pypandoc.convert_text(readme_content, 'md', format='md', outputfile=output_path, extra_args=['--standalone'])
-
-output_path
